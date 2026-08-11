@@ -1,0 +1,466 @@
+<div id="app-root"></div>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&display=swap');
+
+:root {
+  --paper: #F3F1EA;
+  --board: #E7E2D3;
+  --ink: #24302B;
+  --ink-soft: #5B6459;
+  --line: #C9C2AC;
+  --yellow: #F5D06B;
+  --pink: #F3A6A6;
+  --blue: #8FC1D9;
+  --green: #A9C98E;
+  --lilac: #B7A6D9;
+}
+
+* { box-sizing: border-box; }
+
+#app-root {
+  font-family: 'Noto Sans JP', sans-serif;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0) 0 0/14px 14px,
+    var(--board);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 28px 18px 60px;
+}
+
+.wrap { max-width: 980px; margin: 0 auto; }
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 14px;
+}
+
+.header h1 {
+  font-size: 26px;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.header .sub {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.room-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+
+.room-bar label {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.room-bar input[type=text] {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  min-width: 120px;
+}
+
+.room-bar .status {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+}
+
+.compose {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 26px;
+}
+
+.compose textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 64px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.compose-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.compose-row input[type=text] {
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  width: 140px;
+}
+
+.swatches {
+  display: flex;
+  gap: 6px;
+}
+
+.swatch {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.swatch.active { border-color: var(--ink); }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-add {
+  margin-left: auto;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 20px;
+  border-radius: 7px;
+  transition: opacity 0.15s;
+}
+.btn-add:hover { opacity: 0.85; }
+.btn-add:disabled { opacity: 0.4; cursor: default; }
+
+.board-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 4px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.board-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.note {
+  border-radius: 4px 4px 40px 4px / 4px 4px 12px 4px;
+  padding: 16px 14px 40px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  min-height: 120px;
+  position: relative;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.08);
+  transform: rotate(var(--r));
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.note::before {
+  content: '';
+  position: absolute;
+  top: -7px; left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  width: 26px; height: 14px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 2px;
+}
+
+.note .meta {
+  position: absolute;
+  bottom: 10px; left: 14px; right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: rgba(0,0,0,0.55);
+  font-weight: 600;
+}
+
+.note .del {
+  background: transparent;
+  color: rgba(0,0,0,0.4);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.note .del:hover { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.7); }
+
+.empty {
+  text-align: center;
+  padding: 50px 20px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+
+.refresh-btn {
+  background: transparent;
+  border: 1px solid var(--line) !important;
+  color: var(--ink-soft);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+.refresh-btn:hover { background: var(--paper); }
+
+.export-btn {
+  background: var(--green) !important;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  transition: opacity 0.15s;
+}
+.export-btn:hover { opacity: 0.8; }
+.export-btn:disabled { opacity: 0.4; cursor: default; }
+
+@media (max-width: 480px) {
+  .header h1 { font-size: 21px; }
+  .notes { grid-template-columns: 1fr 1fr; gap: 12px; }
+}
+</style>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const COLORS = [
+  { key: 'yellow', hex: 'var(--yellow)' },
+  { key: 'pink', hex: 'var(--pink)' },
+  { key: 'blue', hex: 'var(--blue)' },
+  { key: 'green', hex: 'var(--green)' },
+  { key: 'lilac', hex: 'var(--lilac)' },
+];
+
+function colorForName(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return COLORS[Math.abs(h) % COLORS.length].key;
+}
+
+const COLOR_LABEL = { yellow: '黄', pink: 'ピンク', blue: '青', green: '緑', lilac: '紫' };
+
+function rotationFor(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
+  return ((Math.abs(h) % 60) - 30) / 10; // -3deg .. 3deg
+}
+
+function App() {
+  const [room, setRoom] = useState('main');
+  const [name, setName] = useState('');
+  const [text, setText] = useState('');
+  const [color, setColor] = useState('yellow');
+  const [notes, setNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setErr(null);
+    const unsub = window.db.collection('notes')
+      .where('room', '==', room)
+      .onSnapshot((snap) => {
+        const list = [];
+        snap.forEach((doc) => list.push(doc.data()));
+        list.sort((a, b) => b.time - a.time);
+        setNotes(list);
+        setLoading(false);
+        setErr(null);
+      }, (error) => {
+        console.error(error);
+        setErr('接続に失敗しました');
+        setLoading(false);
+      });
+    return () => unsub();
+  }, [room]);
+
+  async function addNote() {
+    if (!text.trim()) return;
+    const id = 'n' + Date.now() + Math.random().toString(36).slice(2, 7);
+    const note = {
+      id,
+      room,
+      author: name.trim() || '名無し',
+      text: text.trim(),
+      color,
+      time: Date.now(),
+    };
+    setText('');
+    try {
+      await window.db.collection('notes').doc(id).set(note);
+    } catch (e) {
+      console.error(e);
+      setErr('保存に失敗しました');
+    }
+  }
+
+  async function removeNote(id, author) {
+    if (author !== (name.trim() || '名無し')) return;
+    try {
+      await window.db.collection('notes').doc(id).delete();
+    } catch (e) {}
+  }
+
+  function handleRoomChange(e) {
+    setRoom(e.target.value.trim() || 'main');
+  }
+
+  function exportToExcel() {
+    if (!notes.length) return;
+    const rows = [...notes]
+      .sort((a, b) => a.time - b.time)
+      .map((n, i) => ({
+        'No.': i + 1,
+        '投稿者': n.author,
+        'アイデア': n.text,
+        '色': COLOR_LABEL[n.color] || n.color,
+        '投稿日時': new Date(n.time).toLocaleString('ja-JP'),
+      }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 5 }, { wch: 14 }, { wch: 50 }, { wch: 8 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ブレスト');
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `brainstorm_${room}_${stamp}.xlsx`);
+  }
+
+  return (
+    <div className="wrap">
+      <div className="header">
+        <div>
+          <h1>ブレスト・ボード</h1>
+          <div className="sub">同じルーム名を共有すれば、全員が同じボードにアイデアを追加できます</div>
+        </div>
+      </div>
+
+      <div className="room-bar">
+        <label>ルーム名</label>
+        <input type="text" defaultValue={room} onBlur={handleRoomChange}
+          onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+          placeholder="例: kickoff-0811" />
+        <label>お名前</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="任意" />
+        <div className="status">
+          <span className="dot" style={{ background: loading ? '#C9C2AC' : (err ? '#F3A6A6' : '#A9C98E') }}></span>
+          {loading ? '接続中…' : (err || `リアルタイム同期中 · ${notes.length} 件`)}
+          <button className="export-btn" onClick={exportToExcel} disabled={!notes.length}>Excelに出力</button>
+        </div>
+      </div>
+
+      <div className="compose">
+        <textarea
+          placeholder="アイデアを入力… (Cmd/Ctrl + Enter で投稿)"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') addNote(); }}
+        />
+        <div className="compose-row">
+          <div className="swatches">
+            {COLORS.map((c) => (
+              <div key={c.key}
+                className={'swatch' + (color === c.key ? ' active' : '')}
+                style={{ background: c.hex }}
+                onClick={() => setColor(c.key)}
+                title={c.key} />
+            ))}
+          </div>
+          <button className="btn-add" onClick={addNote} disabled={!text.trim()}>付箋を貼る</button>
+        </div>
+      </div>
+
+      <div className="board-label">ボード — 「{room}」</div>
+
+      {notes.length === 0 && !loading ? (
+        <div className="empty">まだアイデアがありません。最初の付箋を貼ってみましょう。</div>
+      ) : (
+        <div className="notes">
+          {notes.map((n) => (
+            <div key={n.id} className="note"
+              style={{ background: `var(--${n.color || 'yellow'})`, '--r': `${rotationFor(n.id)}deg` }}>
+              {n.text}
+              <div className="meta">
+                <span>{n.author}</span>
+                {n.author === (name.trim() || '名無し') && (
+                  <button className="del" onClick={() => removeNote(n.id, n.author)}>削除</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app-root')).render(<App />);
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAifaBoaIGRmkwuB7kaWBY47knVhGZqf0A",
+    authDomain: "postitto-b00c1.firebaseapp.com",
+    projectId: "postitto-b00c1",
+    storageBucket: "postitto-b00c1.firebasestorage.app",
+    messagingSenderId: "24604128561",
+    appId: "1:24604128561:web:720de15961a6ee097eec10"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window.db = firebase.firestore();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
