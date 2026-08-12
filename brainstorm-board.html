@@ -1,0 +1,697 @@
+<div id="app-root"></div>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&display=swap');
+
+:root {
+  --paper: #F3F1EA;
+  --board: #E7E2D3;
+  --ink: #24302B;
+  --ink-soft: #5B6459;
+  --line: #C9C2AC;
+  --yellow: #F5D06B;
+  --orange: #EFA85D;
+  --coral: #E9836E;
+  --pink: #F3A6A6;
+  --rose: #E2A0C4;
+  --lilac: #B7A6D9;
+  --blue: #8FC1D9;
+  --teal: #7FB8B4;
+  --mint: #93D6BB;
+  --green: #A9C98E;
+}
+
+* { box-sizing: border-box; }
+
+#app-root {
+  font-family: 'Noto Sans JP', sans-serif;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(0,0,0,0.05) 1px, transparent 0) 0 0/14px 14px,
+    var(--board);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 28px 18px 60px;
+}
+
+.wrap { max-width: 980px; margin: 0 auto; }
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 14px;
+}
+
+.header h1 {
+  font-size: 26px;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+.header .sub {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.room-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 20px;
+}
+
+.room-bar label {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.room-bar input[type=text] {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  min-width: 120px;
+}
+
+.room-bar .status {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+}
+
+.compose {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 26px;
+}
+
+.compose textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 64px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.compose-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.compose-row input[type=text] {
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  width: 140px;
+}
+
+.swatches {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.swatch.active { border-color: var(--ink); }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-add {
+  margin-left: auto;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 20px;
+  border-radius: 7px;
+  transition: opacity 0.15s;
+}
+.btn-add:hover { opacity: 0.85; }
+.btn-add:disabled { opacity: 0.4; cursor: default; }
+
+.board-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 4px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.board-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.sort-bar label {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.sort-bar select {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.group-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 22px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.group-heading:first-child { margin-top: 0; }
+
+.note .tag {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.55);
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 8px;
+}
+
+.meta-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.note.editing {
+  transform: none;
+  padding: 12px 12px 12px;
+}
+
+.note.editing .edit-category {
+  width: 100%;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.7);
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.note.editing .edit-text {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.5;
+  padding: 8px;
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.85);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 80px;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.edit-actions .save {
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+.edit-actions .save:disabled { opacity: 0.4; }
+
+.edit-actions .cancel {
+  background: rgba(255,255,255,0.6);
+  color: var(--ink);
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px;
+}
+
+.note {
+  border-radius: 4px 4px 40px 4px / 4px 4px 12px 4px;
+  padding: 16px 14px 40px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  min-height: 120px;
+  position: relative;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.08);
+  transform: rotate(var(--r));
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.note::before {
+  content: '';
+  position: absolute;
+  top: -7px; left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  width: 26px; height: 14px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 2px;
+}
+
+.note .meta {
+  position: absolute;
+  bottom: 10px; left: 14px; right: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: rgba(0,0,0,0.55);
+  font-weight: 600;
+}
+
+.note .del {
+  background: transparent;
+  color: rgba(0,0,0,0.4);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.note .del:hover { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.7); }
+
+.empty {
+  text-align: center;
+  padding: 50px 20px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+
+.refresh-btn {
+  background: transparent;
+  border: 1px solid var(--line) !important;
+  color: var(--ink-soft);
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+.refresh-btn:hover { background: var(--paper); }
+
+.export-btn {
+  background: var(--green) !important;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  transition: opacity 0.15s;
+}
+.export-btn:hover { opacity: 0.8; }
+.export-btn:disabled { opacity: 0.4; cursor: default; }
+
+@media (max-width: 480px) {
+  .header h1 { font-size: 21px; }
+  .notes { grid-template-columns: 1fr 1fr; gap: 12px; }
+}
+</style>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const COLORS = [
+  { key: 'yellow', hex: 'var(--yellow)' },
+  { key: 'orange', hex: 'var(--orange)' },
+  { key: 'coral', hex: 'var(--coral)' },
+  { key: 'pink', hex: 'var(--pink)' },
+  { key: 'rose', hex: 'var(--rose)' },
+  { key: 'lilac', hex: 'var(--lilac)' },
+  { key: 'blue', hex: 'var(--blue)' },
+  { key: 'teal', hex: 'var(--teal)' },
+  { key: 'mint', hex: 'var(--mint)' },
+  { key: 'green', hex: 'var(--green)' },
+];
+
+function colorForName(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+  return COLORS[Math.abs(h) % COLORS.length].key;
+}
+
+const COLOR_LABEL = {
+  yellow: '黄', orange: 'オレンジ', coral: 'サンゴ', pink: 'ピンク', rose: 'ローズ',
+  lilac: '紫', blue: '青', teal: 'ティール', mint: 'ミント', green: '緑',
+};
+
+function rotationFor(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
+  return ((Math.abs(h) % 60) - 30) / 10; // -3deg .. 3deg
+}
+
+function NoteCard({ n, currentAuthor, isEditing, editText, editCategory, onStartEdit, onCancelEdit, onSaveEdit, onSetEditText, onSetEditCategory, onDelete, showTag }) {
+  const isMine = n.author === currentAuthor;
+  if (isEditing) {
+    return (
+      <div className="note editing"
+        style={{ background: `var(--${n.color || 'yellow'})`, '--r': '0deg' }}>
+        <input type="text" className="edit-category" value={editCategory}
+          onChange={(e) => onSetEditCategory(e.target.value)} placeholder="区分" />
+        <textarea className="edit-text" value={editText}
+          onChange={(e) => onSetEditText(e.target.value)} autoFocus />
+        <div className="edit-actions">
+          <button className="save" onClick={() => onSaveEdit(n.id)} disabled={!editText.trim()}>保存</button>
+          <button className="cancel" onClick={onCancelEdit}>キャンセル</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="note"
+      style={{ background: `var(--${n.color || 'yellow'})`, '--r': `${rotationFor(n.id)}deg` }}>
+      {showTag && (<><span className="tag">{n.category || '未分類'}</span><br /></>)}
+      {n.text}
+      <div className="meta">
+        <span>{n.author}</span>
+        {isMine && (
+          <span className="meta-actions">
+            <button className="del edit" onClick={() => onStartEdit(n)}>編集</button>
+            <button className="del" onClick={() => onDelete(n.id, n.author)}>削除</button>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [room, setRoom] = useState('main');
+  const [name, setName] = useState('');
+  const [text, setText] = useState('');
+  const [category, setCategory] = useState('');
+  const [color, setColor] = useState('yellow');
+  const [notes, setNotes] = useState([]);
+  const [sortMode, setSortMode] = useState('new'); // new | old | category
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    setErr(null);
+    const unsub = window.db.collection('notes')
+      .where('room', '==', room)
+      .onSnapshot((snap) => {
+        const list = [];
+        snap.forEach((doc) => list.push(doc.data()));
+        list.sort((a, b) => b.time - a.time);
+        setNotes(list);
+        setLoading(false);
+        setErr(null);
+      }, (error) => {
+        console.error(error);
+        setErr('接続に失敗しました');
+        setLoading(false);
+      });
+    return () => unsub();
+  }, [room]);
+
+  async function addNote() {
+    if (!text.trim()) return;
+    const id = 'n' + Date.now() + Math.random().toString(36).slice(2, 7);
+    const note = {
+      id,
+      room,
+      author: name.trim() || '名無し',
+      text: text.trim(),
+      category: category.trim() || '未分類',
+      color,
+      time: Date.now(),
+    };
+    setText('');
+    try {
+      await window.db.collection('notes').doc(id).set(note);
+    } catch (e) {
+      console.error(e);
+      setErr('保存に失敗しました');
+    }
+  }
+
+  async function removeNote(id, author) {
+    if (author !== (name.trim() || '名無し')) return;
+    try {
+      await window.db.collection('notes').doc(id).delete();
+    } catch (e) {}
+  }
+
+  function startEdit(n) {
+    setEditingId(n.id);
+    setEditText(n.text);
+    setEditCategory(n.category === '未分類' ? '' : (n.category || ''));
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditText('');
+    setEditCategory('');
+  }
+
+  async function saveEdit(id) {
+    if (!editText.trim()) return;
+    try {
+      await window.db.collection('notes').doc(id).update({
+        text: editText.trim(),
+        category: editCategory.trim() || '未分類',
+      });
+      cancelEdit();
+    } catch (e) {
+      console.error(e);
+      setErr('更新に失敗しました');
+    }
+  }
+
+  function handleRoomChange(e) {
+    setRoom(e.target.value.trim() || 'main');
+  }
+
+  function exportToExcel() {
+    if (!notes.length) return;
+    const rows = [...notes]
+      .sort((a, b) => a.time - b.time)
+      .map((n, i) => ({
+        'No.': i + 1,
+        '区分': n.category || '未分類',
+        '投稿者': n.author,
+        'アイデア': n.text,
+        '色': COLOR_LABEL[n.color] || n.color,
+        '投稿日時': new Date(n.time).toLocaleString('ja-JP'),
+      }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 5 }, { wch: 14 }, { wch: 14 }, { wch: 50 }, { wch: 8 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ブレスト');
+    const stamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `brainstorm_${room}_${stamp}.xlsx`);
+  }
+
+  // Build the display list: either a flat sorted list, or grouped by category
+  let sortedNotes = [...notes];
+  if (sortMode === 'old') sortedNotes.sort((a, b) => a.time - b.time);
+  else sortedNotes.sort((a, b) => b.time - a.time); // 'new' and default
+
+  let groups = null;
+  if (sortMode === 'category') {
+    const map = {};
+    [...notes].sort((a, b) => b.time - a.time).forEach((n) => {
+      const cat = n.category || '未分類';
+      if (!map[cat]) map[cat] = [];
+      map[cat].push(n);
+    });
+    groups = Object.keys(map).sort((a, b) => {
+      if (a === '未分類') return 1;
+      if (b === '未分類') return -1;
+      return a.localeCompare(b, 'ja');
+    }).map((cat) => ({ cat, items: map[cat] }));
+  }
+
+  return (
+    <div className="wrap">
+      <div className="header">
+        <div>
+          <h1>ブレスト・ボード</h1>
+          <div className="sub">同じルーム名を共有すれば、全員が同じボードにアイデアを追加できます</div>
+        </div>
+      </div>
+
+      <div className="room-bar">
+        <label>ルーム名</label>
+        <input type="text" defaultValue={room} onBlur={handleRoomChange}
+          onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+          placeholder="例: kickoff-0811" />
+        <label>お名前</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="任意" />
+        <div className="status">
+          <span className="dot" style={{ background: loading ? '#C9C2AC' : (err ? '#F3A6A6' : '#A9C98E') }}></span>
+          {loading ? '接続中…' : (err || `リアルタイム同期中 · ${notes.length} 件`)}
+          <button className="export-btn" onClick={exportToExcel} disabled={!notes.length}>Excelに出力</button>
+        </div>
+      </div>
+
+      <div className="compose">
+        <textarea
+          placeholder="アイデアを入力… (Cmd/Ctrl + Enter で投稿)"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') addNote(); }}
+        />
+        <div className="compose-row">
+          <input type="text" value={category} onChange={(e) => setCategory(e.target.value)}
+            placeholder="区分 (例: UI改善)" style={{ width: 130 }} />
+          <div className="swatches">
+            {COLORS.map((c) => (
+              <div key={c.key}
+                className={'swatch' + (color === c.key ? ' active' : '')}
+                style={{ background: c.hex }}
+                onClick={() => setColor(c.key)}
+                title={c.key} />
+            ))}
+          </div>
+          <button className="btn-add" onClick={addNote} disabled={!text.trim()}>付箋を貼る</button>
+        </div>
+      </div>
+
+      <div className="board-label">ボード — 「{room}」</div>
+
+      <div className="sort-bar">
+        <label>並び替え</label>
+        <select value={sortMode} onChange={(e) => setSortMode(e.target.value)}>
+          <option value="new">新しい順</option>
+          <option value="old">古い順</option>
+          <option value="category">区分でグループ化</option>
+        </select>
+      </div>
+
+      {notes.length === 0 && !loading ? (
+        <div className="empty">まだアイデアがありません。最初の付箋を貼ってみましょう。</div>
+      ) : sortMode === 'category' ? (
+        groups.map((g) => (
+          <div key={g.cat}>
+            <div className="group-heading">{g.cat}（{g.items.length}）</div>
+            <div className="notes">
+              {g.items.map((n) => (
+                <NoteCard key={n.id} n={n} currentAuthor={name.trim() || '名無し'}
+                  isEditing={editingId === n.id} editText={editText} editCategory={editCategory}
+                  onStartEdit={startEdit} onCancelEdit={cancelEdit} onSaveEdit={saveEdit}
+                  onSetEditText={setEditText} onSetEditCategory={setEditCategory}
+                  onDelete={removeNote} showTag={false} />
+              ))}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="notes">
+          {sortedNotes.map((n) => (
+            <NoteCard key={n.id} n={n} currentAuthor={name.trim() || '名無し'}
+              isEditing={editingId === n.id} editText={editText} editCategory={editCategory}
+              onStartEdit={startEdit} onCancelEdit={cancelEdit} onSaveEdit={saveEdit}
+              onSetEditText={setEditText} onSetEditCategory={setEditCategory}
+              onDelete={removeNote} showTag={true} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app-root')).render(<App />);
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAifaBoaIGRmkwuB7kaWBY47knVhGZqf0A",
+    authDomain: "postitto-b00c1.firebaseapp.com",
+    projectId: "postitto-b00c1",
+    storageBucket: "postitto-b00c1.firebasestorage.app",
+    messagingSenderId: "24604128561",
+    appId: "1:24604128561:web:720de15961a6ee097eec10"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window.db = firebase.firestore();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
