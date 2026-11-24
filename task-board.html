@@ -158,8 +158,8 @@ button { font-family: inherit; cursor: pointer; }
 
 .note {
   position: relative;
-  background: var(--nc);
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 28%, rgba(0,0,0,0.04) 100%);
+  background-color: var(--nc);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 28%, rgba(0,0,0,0.04) 100%), var(--ngrad, none);
   border-radius: 2px 2px 26px 2px / 2px 2px 7px 2px;
   padding: 24px 15px 13px;
   min-height: 170px;
@@ -246,7 +246,9 @@ button { font-family: inherit; cursor: pointer; }
   border-top: 1px dashed rgba(0,0,0,0.22);
   padding-top: 8px;
 }
-.n-who { font-size: 12.5px; font-weight: 800; color: rgba(0,0,0,0.7); }
+.n-who { font-size: 12.5px; font-weight: 800; color: rgba(0,0,0,0.7); display: flex; flex-wrap: wrap; gap: 3px 9px; min-width: 0; }
+.n-who span { display: inline-flex; align-items: center; gap: 4px; }
+.n-who i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.3); display: inline-block; }
 
 .st-select {
   font-family: inherit;
@@ -346,6 +348,8 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--ink);
 }
 .choice button.active { border-color: var(--ink); }
+.choice.multi button.active::before { content: '✓ '; }
+.field .hint { font-weight: 500; color: var(--ink-soft); }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
 .btn-cancel { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 9px 16px; font-size: 13.5px; color: var(--ink-soft); }
 
@@ -392,6 +396,23 @@ function assigneeColor(name) {
   return a ? a.color : '#E4DFD0';
 }
 
+// 担当は複数指定可。古いデータ(assigneeのみ)も読めるようにしてある
+function assigneesOf(t) {
+  if (Array.isArray(t.assignees) && t.assignees.length) return t.assignees;
+  return t.assignee ? [t.assignee] : [];
+}
+
+// 担当が複数のときは、付箋を担当の色で斜めに塗り分ける
+function noteColorStyle(names) {
+  const cols = names.map(assigneeColor);
+  if (cols.length <= 1) return { '--nc': cols[0] || '#E4DFD0' };
+  const step = 100 / cols.length;
+  const stops = cols
+    .map((c, i) => `${c} ${(i * step).toFixed(1)}%, ${c} ${((i + 1) * step).toFixed(1)}%`)
+    .join(', ');
+  return { '--nc': cols[0], '--ngrad': `linear-gradient(115deg, ${stops})` };
+}
+
 function rotationFor(id) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
@@ -410,10 +431,11 @@ function fmtDue(due) {
   return `${m}/${d}(${dow})`;
 }
 
-const EMPTY_FORM = { title: '', detail: '', due: '', priority: '中', category: '制作', assignee: '中村', status: '開始前' };
+const EMPTY_FORM = { title: '', detail: '', due: '', priority: '中', category: '制作', assignees: ['中村'], status: '開始前' };
 
 function NoteCard({ t, today, onStatus, onEdit, onDelete, confirmId }) {
   const status = statusOf(t);
+  const names = assigneesOf(t);
   const closed = CLOSED.includes(status);
   const overdue = t.due && !closed && status !== '遅延' && t.due < today;
   const isToday = t.due && !closed && t.due === today;
@@ -421,7 +443,7 @@ function NoteCard({ t, today, onStatus, onEdit, onDelete, confirmId }) {
   const cls = 'note' + (closed ? ' closed' : '') + (status === '取消' ? ' cancelled' : '') + (status === '遅延' ? ' delayed' : '');
 
   return (
-    <div className={cls} style={{ '--nc': assigneeColor(t.assignee), '--r': `${rotationFor(t.id)}deg` }}>
+    <div className={cls} style={{ ...noteColorStyle(names), '--r': `${rotationFor(t.id)}deg` }}>
       <div className="n-actions">
         <button onClick={() => onEdit(t)}>編集</button>
         <button className={isConfirm ? 'confirm' : ''} onClick={() => onDelete(t.id)}>{isConfirm ? '本当に削除' : '削除'}</button>
@@ -436,7 +458,11 @@ function NoteCard({ t, today, onStatus, onEdit, onDelete, confirmId }) {
         </span>
       </div>
       <div className="n-foot">
-        <span className="n-who">{t.assignee}</span>
+        <span className="n-who">
+          {names.map((n) => (
+            <span key={n}>{names.length > 1 && <i style={{ background: assigneeColor(n) }}></i>}{n}</span>
+          ))}
+        </span>
         <select className="st-select" value={status} style={{ background: STATUS_COLOR[status] }}
           onChange={(e) => onStatus(t, e.target.value)}>
           {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -482,7 +508,7 @@ function App() {
 
   function openNew() {
     setEditingId(null);
-    setForm({ ...EMPTY_FORM, assignee: tab !== 'all' ? tab : EMPTY_FORM.assignee });
+    setForm({ ...EMPTY_FORM, assignees: tab !== 'all' ? [tab] : EMPTY_FORM.assignees });
     setModalOpen(true);
   }
   function openEdit(t) {
@@ -490,21 +516,30 @@ function App() {
     setForm({
       title: t.title || '', detail: t.detail || '', due: t.due || '',
       priority: t.priority || '中', category: t.category || 'その他',
-      assignee: t.assignee || '中村', status: statusOf(t),
+      assignees: assigneesOf(t).length ? assigneesOf(t) : ['中村'], status: statusOf(t),
     });
     setModalOpen(true);
   }
   function closeModal() { setModalOpen(false); setEditingId(null); }
 
+  function toggleAssignee(name) {
+    const next = form.assignees.includes(name)
+      ? form.assignees.filter((n) => n !== name)
+      : [...form.assignees, name];
+    // 並びは常に担当リストの順にそろえる
+    setForm({ ...form, assignees: ASSIGNEES.map((a) => a.name).filter((n) => next.includes(n)) });
+  }
+
   async function saveTask() {
-    if (!form.title.trim()) return;
+    if (!form.title.trim() || form.assignees.length === 0) return;
     const data = {
       title: form.title.trim(),
       detail: form.detail.trim(),
       due: form.due,
       priority: form.priority,
       category: form.category,
-      assignee: form.assignee,
+      assignees: form.assignees,
+      assignee: form.assignees[0], // 古い表示・データとの互換用(筆頭の担当)
       status: form.status,
       done: form.status === '完了',
     };
@@ -569,20 +604,20 @@ function App() {
     tasks.forEach((t) => {
       if (CLOSED.includes(statusOf(t))) return;
       c.all += 1;
-      if (c[t.assignee] !== undefined) c[t.assignee] += 1;
+      assigneesOf(t).forEach((n) => { if (c[n] !== undefined) c[n] += 1; });
     });
     return c;
   }, [tasks]);
 
-  const visible = applyFilters(tab === 'all' ? tasks : tasks.filter((t) => t.assignee === tab));
+  const visible = applyFilters(tab === 'all' ? tasks : tasks.filter((t) => assigneesOf(t).includes(tab)));
 
   function exportToExcel() {
     if (!tasks.length) return;
     const rows = [...tasks]
-      .sort((a, b) => (a.assignee || '').localeCompare(b.assignee || '', 'ja') || ((a.due || '9999') < (b.due || '9999') ? -1 : 1))
+      .sort((a, b) => assigneesOf(a).join('、').localeCompare(assigneesOf(b).join('、'), 'ja') || ((a.due || '9999') < (b.due || '9999') ? -1 : 1))
       .map((t, i) => ({
         'No.': i + 1,
-        '担当': t.assignee,
+        '担当': assigneesOf(t).join('、'),
         'タイトル': t.title,
         '詳細': t.detail || '',
         '期限': t.due || '',
@@ -662,7 +697,7 @@ function App() {
       {tab === 'all' && layout === 'columns' ? (
         <div className="columns">
           {ASSIGNEES.map((a) => {
-            const items = applyFilters(tasks.filter((t) => t.assignee === a.name));
+            const items = applyFilters(tasks.filter((t) => assigneesOf(t).includes(a.name)));
             return (
               <div className="column" key={a.name}>
                 <div className="column-head" style={{ background: a.color }}>
@@ -707,12 +742,12 @@ function App() {
             </div>
 
             <div className="field">
-              <label>担当(付箋の色になります)</label>
-              <div className="choice">
+              <label>担当 <span className="hint">(複数選べます・付箋が担当の色になります)</span></label>
+              <div className="choice multi">
                 {ASSIGNEES.map((a) => (
-                  <button key={a.name} className={form.assignee === a.name ? 'active' : ''}
+                  <button key={a.name} className={form.assignees.includes(a.name) ? 'active' : ''}
                     style={{ background: a.color }}
-                    onClick={() => setForm({ ...form, assignee: a.name })}>
+                    onClick={() => toggleAssignee(a.name)}>
                     {a.name}
                   </button>
                 ))}
@@ -758,7 +793,7 @@ function App() {
 
             <div className="modal-actions">
               <button className="btn-cancel" onClick={closeModal}>キャンセル</button>
-              <button className="btn-primary" onClick={saveTask} disabled={!form.title.trim()}>
+              <button className="btn-primary" onClick={saveTask} disabled={!form.title.trim() || form.assignees.length === 0}>
                 {editingId ? '保存' : '貼る'}
               </button>
             </div>
