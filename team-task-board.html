@@ -1,0 +1,958 @@
+<title>タスクボード(空間・メモリアル)</title>
+<div id="app-root"></div>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;900&family=Zen+Kurenaido&display=swap');
+
+:root {
+  --ink: #2B2A26;
+  --ink-soft: #6A665B;
+  --paper: #FBF8F0;
+  --cork: #D8C39A;
+  --cork-dark: #C9B185;
+  --line: #CDBE9B;
+  --danger: #D2574A;
+
+}
+
+* { box-sizing: border-box; }
+
+#app-root {
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 24px 16px 70px;
+  background-color: var(--cork);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.18) 0 2px, transparent 3px),
+    radial-gradient(circle at 70% 60%, rgba(120,90,40,0.16) 0 2px, transparent 3px),
+    radial-gradient(circle at 45% 85%, rgba(255,255,255,0.14) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 85% 15%, rgba(120,90,40,0.12) 0 1.5px, transparent 2.5px);
+  background-size: 38px 38px, 53px 53px, 29px 29px, 47px 47px;
+}
+
+.wrap { max-width: 1240px; margin: 0 auto; }
+button { font-family: inherit; cursor: pointer; }
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.header h1 {
+  font-family: 'Zen Kurenaido', 'Noto Sans JP', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.04em;
+}
+.header .sub { font-size: 12.5px; color: #5A5033; margin-top: 2px; }
+
+.btn-primary {
+  background: var(--ink);
+  color: #FFF8DC;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+}
+.btn-primary:hover { opacity: 0.88; }
+.btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+.statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 12px;
+  color: #5A5033;
+  margin-bottom: 12px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.btn-export {
+  background: rgba(255,255,255,0.7);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+.btn-export:disabled { opacity: 0.4; cursor: default; }
+
+/* Tabs */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.14);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tab .swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15); }
+.tab .count {
+  font-size: 11px;
+  background: rgba(0,0,0,0.09);
+  border-radius: 10px;
+  padding: 1px 7px;
+}
+.tab.active { background: var(--ink); color: #FFF8DC; border-color: var(--ink); }
+.tab.active .count { background: rgba(255,255,255,0.22); }
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 20px;
+}
+.toolbar .spacer { flex: 1; }
+.toolbar label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+.toolbar select {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid rgba(0,0,0,0.18);
+  border-radius: 6px;
+  background: #fff;
+}
+.check-inline { display: inline-flex; align-items: center; gap: 4px; }
+.seg { display: inline-flex; border: 1px solid rgba(0,0,0,0.2); border-radius: 7px; overflow: hidden; }
+.seg button {
+  border: none;
+  background: rgba(255,255,255,0.7);
+  padding: 5px 12px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.seg button.active { background: var(--ink); color: #FFF8DC; }
+
+/* Post-it notes */
+.notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+  gap: 26px 22px;
+  padding: 8px 4px;
+}
+
+.note {
+  position: relative;
+  background-color: var(--nc);
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 28%, rgba(0,0,0,0.04) 100%), var(--ngrad, none);
+  border-radius: 2px 2px 26px 2px / 2px 2px 7px 2px;
+  padding: 24px 15px 13px;
+  min-height: 170px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 5px 9px rgba(60,40,10,0.28), 0 1px 2px rgba(60,40,10,0.2);
+  transform: rotate(var(--r));
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.note:hover {
+  transform: rotate(0deg) translateY(-4px);
+  box-shadow: 3px 10px 16px rgba(60,40,10,0.32), 0 1px 2px rgba(60,40,10,0.2);
+  z-index: 2;
+}
+.note::before {
+  content: '';
+  position: absolute;
+  top: -9px; left: 50%;
+  width: 64px; height: 20px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.note.closed { opacity: 0.62; filter: saturate(0.7); }
+.note.cancelled .n-title { text-decoration: line-through; }
+.note.delayed::before { background: rgba(214,83,68,0.7); border-color: rgba(150,40,30,0.3); }
+
+.n-actions {
+  position: absolute;
+  top: 6px; right: 8px;
+  display: flex;
+  gap: 2px;
+}
+.n-actions button {
+  font-size: 11px;
+  background: transparent;
+  border: none;
+  color: rgba(0,0,0,0.45);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.n-actions button:hover { background: rgba(0,0,0,0.09); color: rgba(0,0,0,0.75); }
+.n-actions button.confirm { background: var(--danger); color: #fff; }
+
+.n-title {
+  font-family: 'Zen Kurenaido', 'Noto Sans JP', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 2px 0 6px;
+  word-break: break-word;
+}
+.n-detail {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(0,0,0,0.68);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 8px;
+}
+
+.n-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; padding-bottom: 8px; }
+.tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.62);
+  color: rgba(0,0,0,0.75);
+}
+.tag.pri-high { background: rgba(214,83,68,0.9); color: #fff; }
+.tag.pri-mid { background: rgba(255,255,255,0.8); color: #7A5200; }
+.tag.pri-low { background: rgba(255,255,255,0.55); color: #4B6B34; }
+.tag.overdue { background: rgba(214,83,68,0.9); color: #fff; }
+.tag.today { background: #FFE27A; color: #6B4F00; }
+
+.n-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px dashed rgba(0,0,0,0.22);
+  padding-top: 8px;
+}
+.n-who { font-size: 12.5px; font-weight: 800; color: rgba(0,0,0,0.7); display: flex; flex-wrap: wrap; gap: 3px 9px; min-width: 0; }
+.n-who span { display: inline-flex; align-items: center; gap: 4px; }
+.n-who i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.3); display: inline-block; }
+
+.st-select {
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 800;
+  border: none;
+  border-radius: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--ink);
+  appearance: auto;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14);
+}
+
+/* Columns */
+.columns {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 250px;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 6px 2px 14px;
+}
+.column {
+  background: rgba(255,255,255,0.32);
+  border: 1px dashed rgba(0,0,0,0.25);
+  border-radius: 12px;
+  padding: 10px 10px 18px;
+  min-width: 250px;
+}
+.column-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Zen Kurenaido', 'Noto Sans JP', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  margin-bottom: 18px;
+  box-shadow: 1px 2px 4px rgba(0,0,0,0.18);
+}
+.column-head .count { margin-left: auto; font-family: 'Noto Sans JP', sans-serif; font-size: 11.5px; font-weight: 700; background: rgba(255,255,255,0.6); padding: 1px 8px; border-radius: 10px; }
+.column .notes { grid-template-columns: 1fr; gap: 24px; padding: 4px 6px; }
+
+.empty {
+  text-align: center;
+  padding: 44px 20px;
+  color: #5A5033;
+  font-size: 13.5px;
+  border: 2px dashed rgba(0,0,0,0.25);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.3);
+}
+
+/* Modal */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(40,30,10,0.5);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+.modal {
+  background: var(--paper);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 20px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+.modal h2 { margin: 0 0 14px; font-family: 'Zen Kurenaido', 'Noto Sans JP', sans-serif; font-size: 22px; font-weight: 700; }
+.field { margin-bottom: 14px; }
+.field > label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-soft); margin-bottom: 5px; }
+.field input[type=text], .field input[type=date], .field textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+}
+.field textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.choice { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice button {
+  border: 2px solid transparent;
+  background: #EFE9D8;
+  border-radius: 20px;
+  padding: 5px 13px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.choice button.active { border-color: var(--ink); }
+.choice.multi button.active::before { content: '✓ '; }
+.field .hint { font-weight: 500; color: var(--ink-soft); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+.btn-cancel { background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 9px 16px; font-size: 13.5px; color: var(--ink-soft); }
+
+@media (max-width: 600px) {
+  .header h1 { font-size: 25px; }
+  .row2 { grid-template-columns: 1fr; }
+  .columns { grid-auto-columns: 260px; }
+}
+.div-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.div-tab {
+  font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+  padding: 9px 18px; border-radius: 10px; border: 2px solid var(--ink, #3A3328);
+  background: #FFFDF3; color: var(--ink, #3A3328);
+}
+.div-tab .count { margin-left: 6px; font-size: 12px; background: rgba(0,0,0,0.1); padding: 1px 8px; border-radius: 10px; }
+.div-tab.active { background: var(--ink, #3A3328); color: #FFF8DC; }
+.div-tab.active .count { background: rgba(255,255,255,0.22); }
+.tag.div { background: rgba(58,51,40,0.85); color: #FFF8DC; }
+.choice.div button { background: #FFFDF3; font-weight: 700; }
+.hint-line { font-size: 12px; color: #7A5200; margin-top: 6px; }
+.hint-line.warn { color: #C0392B; }
+</style>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+// ===== 大項目(チーム)とメンバー =====
+// col = データの保存先。これまでの2つのボードの保存先をそのまま読み書きするので、データの移行は不要
+const DIVISIONS = [
+  {
+    key: 'space', name: '空間デザインチーム', short: '空間', col: 'tasks',
+    members: ['中村', '岡田', '片山', '吉川', '髙橋', '萬代'],
+  },
+  {
+    key: 'memorial', name: 'メモリアルコンサルタント', short: 'メモリアル', col: 'mc_tasks',
+    members: ['萬代', '山田', '米倉', '小玉', '水野', '大町', '三井', '小川', '阿部', '玉井', '駿河', '國持', '安本', '井谷', '原', '古澤', '村山'],
+  },
+];
+const DIV_BY_KEY = Object.fromEntries(DIVISIONS.map((d) => [d.key, d]));
+
+// 両チームの全メンバー(萬代は両方に所属。重複は1人として数える)
+const ALL_PEOPLE = [];
+DIVISIONS.forEach((d) => d.members.forEach((n) => { if (!ALL_PEOPLE.includes(n)) ALL_PEOPLE.push(n); }));
+
+function membersFor(divKey) {
+  return divKey === 'all' ? ALL_PEOPLE : DIV_BY_KEY[divKey].members;
+}
+
+// 付箋の色は人ごとに固定(どのチームで見ても同じ色)
+const FIXED_COLORS = {
+  '中村': '#F7B7A8', '岡田': '#A8D5EA', '片山': '#BCDDA2',
+  '吉川': '#F8DC82', '髙橋': '#CDBFEA', '萬代': '#F6B9D6',
+};
+const MEMORIAL_LIST = DIV_BY_KEY.memorial.members;
+function assigneeColor(name) {
+  if (FIXED_COLORS[name]) return FIXED_COLORS[name];
+  const i = MEMORIAL_LIST.indexOf(name);
+  if (i < 0) return '#E4DFD0';
+  return `hsl(${Math.round((i * 137.5) % 360)} 68% ${i % 2 ? 79 : 85}%)`;
+}
+
+const CATEGORIES = ['仕入れ', '花打ち', '制作', '設営', '片し', 'その他'];
+const PRIORITIES = ['高', '中', '低'];
+const PRI_ORDER = { '高': 0, '中': 1, '低': 2 };
+const PRI_CLASS = { '高': 'pri-high', '中': 'pri-mid', '低': 'pri-low' };
+
+const STATUSES = ['開始前', '進行初期', '進行中期', '完了', '遅延', '取消'];
+const STATUS_COLOR = {
+  '開始前': '#EDEAE0',
+  '進行初期': '#CFE6F5',
+  '進行中期': '#9ED0E8',
+  '完了': '#A9D98C',
+  '遅延': '#F08A7C',
+  '取消': '#C9C4B8',
+};
+const STATUS_SORT = { '遅延': 0, '進行中期': 1, '進行初期': 2, '開始前': 3, '完了': 4, '取消': 5 };
+const CLOSED = ['完了', '取消'];
+const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+
+function statusOf(t) { return t.status || (t.done ? '完了' : '開始前'); }
+function uidOf(t) { return `${t._col}/${t.id}`; }
+
+// 担当は複数指定可。古いデータ(assigneeのみ)も読めるようにしてある
+function assigneesOf(t) {
+  if (Array.isArray(t.assignees) && t.assignees.length) return t.assignees;
+  return t.assignee ? [t.assignee] : [];
+}
+
+// 担当が複数のときは、付箋を担当の色で斜めに塗り分ける
+function noteColorStyle(names) {
+  const cols = names.map(assigneeColor);
+  if (cols.length <= 1) return { '--nc': cols[0] || '#E4DFD0' };
+  const step = 100 / cols.length;
+  const stops = cols
+    .map((c, i) => `${c} ${(i * step).toFixed(1)}%, ${c} ${((i + 1) * step).toFixed(1)}%`)
+    .join(', ');
+  return { '--nc': cols[0], '--ngrad': `linear-gradient(115deg, ${stops})` };
+}
+
+function rotationFor(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
+  return ((Math.abs(h) % 50) - 25) / 10; // -2.5deg .. 2.5deg
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function fmtDue(due) {
+  if (!due) return '期限なし';
+  const [y, m, d] = due.split('-').map(Number);
+  const dow = WEEKDAYS[new Date(y, m - 1, d).getDay()];
+  return `${m}/${d}(${dow})`;
+}
+
+const EMPTY_FORM = {
+  title: '', detail: '', due: '', priority: '中', category: '制作',
+  division: 'space', assignees: [], status: '開始前',
+};
+
+function NoteCard({ t, today, onStatus, onEdit, onDelete, confirmId, showDivision }) {
+  const status = statusOf(t);
+  const names = assigneesOf(t);
+  const closed = CLOSED.includes(status);
+  const overdue = t.due && !closed && status !== '遅延' && t.due < today;
+  const isToday = t.due && !closed && t.due === today;
+  const isConfirm = confirmId === uidOf(t);
+  const cls = 'note' + (closed ? ' closed' : '') + (status === '取消' ? ' cancelled' : '') + (status === '遅延' ? ' delayed' : '');
+
+  return (
+    <div className={cls} style={{ ...noteColorStyle(names), '--r': `${rotationFor(t.id)}deg` }}>
+      <div className="n-actions">
+        <button onClick={() => onEdit(t)}>編集</button>
+        <button className={isConfirm ? 'confirm' : ''} onClick={() => onDelete(t)}>{isConfirm ? '本当に削除' : '削除'}</button>
+      </div>
+      <div className="n-title">{t.title}</div>
+      {t.detail ? <div className="n-detail">{t.detail}</div> : null}
+      <div className="n-tags">
+        {showDivision && <span className="tag div">{DIV_BY_KEY[t._div].short}</span>}
+        <span className="tag">{t.category}</span>
+        <span className={'tag ' + PRI_CLASS[t.priority]}>優先度 {t.priority}</span>
+        <span className={'tag' + (overdue ? ' overdue' : '') + (isToday ? ' today' : '')}>
+          {overdue ? '期限超過 ' : isToday ? '今日 ' : '〆 '}{fmtDue(t.due)}
+        </span>
+      </div>
+      <div className="n-foot">
+        <span className="n-who">
+          {names.map((n) => (
+            <span key={n}>{names.length > 1 && <i style={{ background: assigneeColor(n) }}></i>}{n}</span>
+          ))}
+        </span>
+        <select className="st-select" value={status} style={{ background: STATUS_COLOR[status] }}
+          onChange={(e) => onStatus(t, e.target.value)}>
+          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  // 保存先ごとのタスク(空間=tasks / メモリアル=mc_tasks)
+  const [byCol, setByCol] = useState({ tasks: [], mc_tasks: [] });
+  const [loaded, setLoaded] = useState({ tasks: false, mc_tasks: false });
+  const [failed, setFailed] = useState({});
+  const [err, setErr] = useState(null);
+
+  const [division, setDivision] = useState(() => {
+    try {
+      const v = localStorage.getItem('tb_division');
+      if (v === 'all' || DIV_BY_KEY[v]) return v;
+    } catch (e) {}
+    return 'space';
+  });
+  const [tab, setTab] = useState('all');
+  const [layout, setLayout] = useState('board');
+  const [catFilter, setCatFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortMode, setSortMode] = useState('due');
+  const [showClosed, setShowClosed] = useState(false);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [confirmId, setConfirmId] = useState(null);
+
+  const today = todayStr();
+
+  useEffect(() => {
+    try { localStorage.setItem('tb_division', division); } catch (e) {}
+  }, [division]);
+
+  useEffect(() => {
+    const unsubs = DIVISIONS.map((d) =>
+      window.db.collection(d.col).onSnapshot((snap) => {
+        const list = [];
+        snap.forEach((doc) => list.push({ ...doc.data(), _div: d.key, _col: d.col }));
+        setByCol((prev) => ({ ...prev, [d.col]: list }));
+        setLoaded((prev) => ({ ...prev, [d.col]: true }));
+        setFailed((prev) => ({ ...prev, [d.col]: false }));
+      }, (e) => {
+        console.error(e);
+        setLoaded((prev) => ({ ...prev, [d.col]: true }));
+        setFailed((prev) => ({ ...prev, [d.col]: true }));
+      })
+    );
+    return () => unsubs.forEach((u) => u());
+  }, []);
+
+  const loading = !(loaded.tasks && loaded.mc_tasks);
+  const failedNames = DIVISIONS.filter((d) => failed[d.col]).map((d) => d.name);
+  const statusText = loading ? '接続中…'
+    : (err || (failedNames.length ? `接続に失敗しました(${failedNames.join('・')})` : 'リアルタイム同期中'));
+  const hasProblem = !loading && (err || failedNames.length > 0);
+
+  const allTasks = useMemo(() => DIVISIONS.flatMap((d) => byCol[d.col] || []), [byCol]);
+  const scopeTasks = useMemo(
+    () => (division === 'all' ? allTasks : allTasks.filter((t) => t._div === division)),
+    [allTasks, division]
+  );
+
+  function pickDivision(key) { setDivision(key); setTab('all'); }
+
+  function openNew() {
+    const d = division !== 'all' ? division : 'space';
+    const members = DIV_BY_KEY[d].members;
+    setEditingTask(null);
+    setForm({ ...EMPTY_FORM, division: d, assignees: tab !== 'all' && members.includes(tab) ? [tab] : [] });
+    setModalOpen(true);
+  }
+  function openEdit(t) {
+    setEditingTask(t);
+    setForm({
+      title: t.title || '', detail: t.detail || '', due: t.due || '',
+      priority: t.priority || '中', category: t.category || 'その他',
+      division: t._div, assignees: assigneesOf(t), status: statusOf(t),
+    });
+    setModalOpen(true);
+  }
+  function closeModal() { setModalOpen(false); setEditingTask(null); }
+
+  function setFormDivision(key) {
+    const members = DIV_BY_KEY[key].members;
+    // 移動先のチームにいない担当は外す(萬代のように両方にいる人は残る)
+    setForm({ ...form, division: key, assignees: form.assignees.filter((n) => members.includes(n)) });
+  }
+
+  function toggleAssignee(name) {
+    const members = DIV_BY_KEY[form.division].members;
+    const next = form.assignees.includes(name)
+      ? form.assignees.filter((n) => n !== name)
+      : [...form.assignees, name];
+    // 並びはチームのメンバー順にそろえる(リストにない名前は後ろに残す)
+    setForm({
+      ...form,
+      assignees: [...members.filter((n) => next.includes(n)), ...next.filter((n) => !members.includes(n))],
+    });
+  }
+
+  async function saveTask() {
+    if (!form.title.trim() || form.assignees.length === 0) return;
+    const col = DIV_BY_KEY[form.division].col;
+    const data = {
+      title: form.title.trim(),
+      detail: form.detail.trim(),
+      due: form.due,
+      priority: form.priority,
+      category: form.category,
+      assignees: form.assignees,
+      assignee: form.assignees[0], // 古い表示・データとの互換用(筆頭の担当)
+      status: form.status,
+      done: form.status === '完了',
+    };
+    try {
+      if (editingTask && editingTask._col === col) {
+        await window.db.collection(col).doc(editingTask.id).update(data);
+      } else if (editingTask) {
+        // 大項目を変えたとき: 移動先に作成し、元を削除(2つを同時に実行)
+        const batch = window.db.batch();
+        batch.set(window.db.collection(col).doc(editingTask.id),
+          { id: editingTask.id, created: editingTask.created || Date.now(), ...data });
+        batch.delete(window.db.collection(editingTask._col).doc(editingTask.id));
+        await batch.commit();
+      } else {
+        const id = 't' + Date.now() + Math.random().toString(36).slice(2, 7);
+        await window.db.collection(col).doc(id).set({ id, created: Date.now(), ...data });
+      }
+      setErr(null);
+      closeModal();
+    } catch (e) {
+      console.error(e);
+      setErr('保存に失敗しました');
+    }
+  }
+
+  async function changeStatus(t, status) {
+    try {
+      await window.db.collection(t._col).doc(t.id).update({ status, done: status === '完了' });
+    } catch (e) { console.error(e); setErr('更新に失敗しました'); }
+  }
+
+  async function deleteTask(t) {
+    const uid = uidOf(t);
+    if (confirmId !== uid) {
+      setConfirmId(uid);
+      setTimeout(() => setConfirmId((cur) => (cur === uid ? null : cur)), 3000);
+      return;
+    }
+    setConfirmId(null);
+    try { await window.db.collection(t._col).doc(t.id).delete(); }
+    catch (e) { console.error(e); }
+  }
+
+  function applyFilters(list) {
+    let out = list;
+    if (statusFilter !== 'all') out = out.filter((t) => statusOf(t) === statusFilter);
+    else if (!showClosed) out = out.filter((t) => !CLOSED.includes(statusOf(t)));
+    if (catFilter !== 'all') out = out.filter((t) => t.category === catFilter);
+    return [...out].sort((a, b) => {
+      const ac = CLOSED.includes(statusOf(a)), bc = CLOSED.includes(statusOf(b));
+      if (ac !== bc) return ac ? 1 : -1;
+      if (sortMode === 'priority') {
+        const p = PRI_ORDER[a.priority] - PRI_ORDER[b.priority];
+        if (p) return p;
+        return (a.due || '9999') < (b.due || '9999') ? -1 : 1;
+      }
+      if (sortMode === 'status') {
+        const s = STATUS_SORT[statusOf(a)] - STATUS_SORT[statusOf(b)];
+        if (s) return s;
+      }
+      if (sortMode === 'new') return (b.created || 0) - (a.created || 0);
+      const ad = a.due || '9999-99-99', bd = b.due || '9999-99-99';
+      if (ad !== bd) return ad < bd ? -1 : 1;
+      return PRI_ORDER[a.priority] - PRI_ORDER[b.priority];
+    });
+  }
+
+  // 大項目タブの未完了件数
+  const divOpen = useMemo(() => {
+    const c = { all: 0, space: 0, memorial: 0 };
+    allTasks.forEach((t) => {
+      if (CLOSED.includes(statusOf(t))) return;
+      c.all += 1;
+      c[t._div] += 1;
+    });
+    return c;
+  }, [allTasks]);
+
+  // 担当タブの未完了件数(いま表示中の大項目の中で数える)
+  const people = membersFor(division);
+  const openCounts = useMemo(() => {
+    const c = { all: 0 };
+    people.forEach((n) => { c[n] = 0; });
+    scopeTasks.forEach((t) => {
+      if (CLOSED.includes(statusOf(t))) return;
+      c.all += 1;
+      assigneesOf(t).forEach((n) => { if (c[n] !== undefined) c[n] += 1; });
+    });
+    return c;
+  }, [scopeTasks, division]);
+
+  const visible = applyFilters(tab === 'all' ? scopeTasks : scopeTasks.filter((t) => assigneesOf(t).includes(tab)));
+
+  function exportToExcel() {
+    if (!scopeTasks.length) return;
+    const order = (t) => DIVISIONS.findIndex((d) => d.key === t._div);
+    const rows = [...scopeTasks]
+      .sort((a, b) => order(a) - order(b)
+        || assigneesOf(a).join('、').localeCompare(assigneesOf(b).join('、'), 'ja')
+        || ((a.due || '9999') < (b.due || '9999') ? -1 : 1))
+      .map((t, i) => ({
+        'No.': i + 1,
+        '大項目': DIV_BY_KEY[t._div].name,
+        '担当': assigneesOf(t).join('、'),
+        'タイトル': t.title,
+        '詳細': t.detail || '',
+        '期限': t.due || '',
+        '優先度': t.priority,
+        '項目': t.category,
+        '進捗': statusOf(t),
+      }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{ wch: 5 }, { wch: 22 }, { wch: 14 }, { wch: 28 }, { wch: 40 }, { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'タスク');
+    XLSX.writeFile(wb, `tasks_${division}_${today}.xlsx`);
+  }
+
+  const cardProps = {
+    today, onStatus: changeStatus, onEdit: openEdit, onDelete: deleteTask,
+    confirmId, showDivision: division === 'all',
+  };
+  const formMembers = DIV_BY_KEY[form.division].members;
+  const movingDivision = editingTask && form.division !== editingTask._div;
+
+  return (
+    <div className="wrap">
+      <div className="header">
+        <div>
+          <h1>タスクボード</h1>
+          <div className="sub">空間デザインチーム・メモリアルコンサルタントの全員が、同じボードをリアルタイムに更新できます</div>
+        </div>
+        <button className="btn-primary" onClick={openNew}>＋ 付箋を貼る</button>
+      </div>
+
+      <div className="statusbar">
+        <span className="dot" style={{ background: loading ? '#9A9280' : (hasProblem ? '#D2574A' : '#5FAE4A') }}></span>
+        {statusText}
+        <button className="btn-export" onClick={exportToExcel} disabled={!scopeTasks.length}>Excelに出力</button>
+      </div>
+
+      <div className="div-tabs">
+        {DIVISIONS.map((d) => (
+          <button key={d.key} className={'div-tab' + (division === d.key ? ' active' : '')} onClick={() => pickDivision(d.key)}>
+            {d.name} <span className="count">{divOpen[d.key]}</span>
+          </button>
+        ))}
+        <button className={'div-tab' + (division === 'all' ? ' active' : '')} onClick={() => pickDivision('all')}>
+          すべて <span className="count">{divOpen.all}</span>
+        </button>
+      </div>
+
+      <div className="tabs">
+        <button className={'tab' + (tab === 'all' ? ' active' : '')} onClick={() => setTab('all')}>
+          全体 <span className="count">{openCounts.all}</span>
+        </button>
+        {people.map((n) => (
+          <button key={n} className={'tab' + (tab === n ? ' active' : '')} onClick={() => setTab(n)}>
+            <span className="swatch" style={{ background: assigneeColor(n) }}></span>
+            {n} <span className="count">{openCounts[n]}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="toolbar">
+        {tab === 'all' && (
+          <div className="seg">
+            <button className={layout === 'board' ? 'active' : ''} onClick={() => setLayout('board')}>まとめて</button>
+            <button className={layout === 'columns' ? 'active' : ''} onClick={() => setLayout('columns')}>担当別</button>
+          </div>
+        )}
+        <label>進捗</label>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="all">すべて</option>
+          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <label>項目</label>
+        <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+          <option value="all">すべて</option>
+          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <label>並び替え</label>
+        <select value={sortMode} onChange={(e) => setSortMode(e.target.value)}>
+          <option value="due">期限が近い順</option>
+          <option value="priority">優先度が高い順</option>
+          <option value="status">進捗順(遅延が先頭)</option>
+          <option value="new">追加が新しい順</option>
+        </select>
+        <span className="spacer"></span>
+        <label className="check-inline">
+          <input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)}
+            disabled={statusFilter !== 'all'} />
+          完了・取消も表示
+        </label>
+      </div>
+
+      {tab === 'all' && layout === 'columns' && visible.length > 0 ? (
+        <div className="columns">
+          {people.map((n) => {
+            const items = applyFilters(scopeTasks.filter((t) => assigneesOf(t).includes(n)));
+            if (items.length === 0) return null;
+            return (
+              <div className="column" key={n}>
+                <div className="column-head" style={{ background: assigneeColor(n) }}>
+                  {n}<span className="count">{items.length}</span>
+                </div>
+                <div className="notes">
+                  {items.map((t) => <NoteCard key={uidOf(t)} t={t} {...cardProps} />)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="empty">
+          {scopeTasks.length === 0 ? 'まだ付箋がありません。右上の「＋ 付箋を貼る」から登録してください。' : '条件に合う付箋がありません。'}
+        </div>
+      ) : (
+        <div className="notes">
+          {visible.map((t) => <NoteCard key={uidOf(t)} t={t} {...cardProps} />)}
+        </div>
+      )}
+
+      {modalOpen && (
+        <div className="overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
+          <div className="modal">
+            <h2>{editingTask ? '付箋を編集' : '付箋を貼る'}</h2>
+
+            <div className="field">
+              <label>大項目</label>
+              <div className="choice div">
+                {DIVISIONS.map((d) => (
+                  <button key={d.key} className={form.division === d.key ? 'active' : ''}
+                    onClick={() => setFormDivision(d.key)}>{d.name}</button>
+                ))}
+              </div>
+              {movingDivision && <div className="hint-line">保存すると、この付箋は「{DIV_BY_KEY[form.division].name}」に移動します</div>}
+            </div>
+
+            <div className="field">
+              <label>タイトル</label>
+              <input type="text" autoFocus value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="例: 市場で花材の仕入れ" />
+            </div>
+
+            <div className="field">
+              <label>詳細</label>
+              <textarea value={form.detail}
+                onChange={(e) => setForm({ ...form, detail: e.target.value })}
+                placeholder="数量・場所・注意点など" />
+            </div>
+
+            <div className="field">
+              <label>担当 <span className="hint">(複数選べます・付箋が担当の色になります)</span></label>
+              <div className="choice multi">
+                {formMembers.map((n) => (
+                  <button key={n} className={form.assignees.includes(n) ? 'active' : ''}
+                    style={{ background: assigneeColor(n) }}
+                    onClick={() => toggleAssignee(n)}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+              {form.assignees.length === 0 && <div className="hint-line warn">担当を1人以上選んでください</div>}
+            </div>
+
+            <div className="row2">
+              <div className="field">
+                <label>期限</label>
+                <input type="date" value={form.due} onChange={(e) => setForm({ ...form, due: e.target.value })} />
+              </div>
+              <div className="field">
+                <label>優先度</label>
+                <div className="choice">
+                  {PRIORITIES.map((p) => (
+                    <button key={p} className={form.priority === p ? 'active' : ''}
+                      onClick={() => setForm({ ...form, priority: p })}>{p}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="field">
+              <label>項目</label>
+              <div className="choice">
+                {CATEGORIES.map((c) => (
+                  <button key={c} className={form.category === c ? 'active' : ''}
+                    onClick={() => setForm({ ...form, category: c })}>{c}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <label>進捗</label>
+              <div className="choice">
+                {STATUSES.map((s) => (
+                  <button key={s} className={form.status === s ? 'active' : ''}
+                    style={{ background: STATUS_COLOR[s] }}
+                    onClick={() => setForm({ ...form, status: s })}>{s}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={closeModal}>キャンセル</button>
+              <button className="btn-primary" onClick={saveTask} disabled={!form.title.trim() || form.assignees.length === 0}>
+                {editingTask ? '保存' : '貼る'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app-root')).render(<App />);
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAifaBoaIGRmkwuB7kaWBY47knVhGZqf0A",
+    authDomain: "postitto-b00c1.firebaseapp.com",
+    projectId: "postitto-b00c1",
+    storageBucket: "postitto-b00c1.firebasestorage.app",
+    messagingSenderId: "24604128561",
+    appId: "1:24604128561:web:720de15961a6ee097eec10"
+  };
+  firebase.initializeApp(firebaseConfig);
+  window.db = firebase.firestore();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
