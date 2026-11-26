@@ -377,7 +377,7 @@ const { useState, useEffect, useMemo } = React;
 const DIVISIONS = [
   {
     key: 'space', name: '空間デザインチーム', short: '空間', col: 'tasks',
-    members: ['中村', '岡田', '片山', '吉川', '髙橋', '萬代'],
+    members: ['中村', '岡田', '片山', '吉川', '髙橋', '萬代', '亀井', '内野（江）', '仙頭', '小林', '須藤', '田口', '中尾', '八木', '田中', '大隅'],
   },
   {
     key: 'memorial', name: 'メモリアルコンサルタント', short: 'メモリアル', col: 'mc_tasks',
@@ -399,12 +399,15 @@ const FIXED_COLORS = {
   '中村': '#F7B7A8', '岡田': '#A8D5EA', '片山': '#BCDDA2',
   '吉川': '#F8DC82', '髙橋': '#CDBFEA', '萬代': '#F6B9D6',
 };
+const SPACE_EXTRA = DIV_BY_KEY.space.members.filter((n) => !FIXED_COLORS[n]);
 const MEMORIAL_LIST = DIV_BY_KEY.memorial.members;
 function assigneeColor(name) {
   if (FIXED_COLORS[name]) return FIXED_COLORS[name];
   const i = MEMORIAL_LIST.indexOf(name);
-  if (i < 0) return '#E4DFD0';
-  return `hsl(${Math.round((i * 137.5) % 360)} 68% ${i % 2 ? 79 : 85}%)`;
+  if (i >= 0) return `hsl(${Math.round((i * 137.5) % 360)} 68% ${i % 2 ? 79 : 85}%)`;
+  const j = SPACE_EXTRA.indexOf(name);
+  if (j < 0) return '#E4DFD0';
+  return `hsl(${Math.round((j * 137.5 + 40) % 360)} 62% ${j % 2 ? 80 : 86}%)`;
 }
 
 const CATEGORIES = ['仕入れ', '花打ち', '制作', '設営', '片し', 'その他'];
